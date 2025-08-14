@@ -9,7 +9,7 @@ import urllib.request
 import urllib.error
 import os
 
-BASE = "http://127.0.0.1:8010"
+BASE = "http://13.58.240.149:5032"
 
 def wait_for_server():
     """Espera hasta que el servidor responda"""
