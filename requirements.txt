@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn[standard]==0.30.6
+pydantic==2.8.2
+numpy>=1.24
+soundfile==0.12.1
+scipy>=1.10
+kokoro>=0.9.4
+# on mac/windows cpu only installs are fine; torch optional for kokoro GPU acceleration
+# torch will be auto-installed by kokoro if needed, otherwise install manually for GPU
