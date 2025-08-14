@@ -5,5 +5,7 @@ numpy>=1.24
 soundfile==0.12.1
 scipy>=1.10
 kokoro>=0.9.4
+# Optimización adicional
+psutil>=5.9.0
 # on mac/windows cpu only installs are fine; torch optional for kokoro GPU acceleration
 # torch will be auto-installed by kokoro if needed, otherwise install manually for GPU
