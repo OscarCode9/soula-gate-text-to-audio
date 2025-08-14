@@ -11,12 +11,17 @@ services:
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
+      - HF_HOME=/home/appuser/.cache/huggingface
+      - TRANSFORMERS_CACHE=/home/appuser/.cache/huggingface
+      - HF_HUB_CACHE=/home/appuser/.cache/huggingface
     volumes:
-      # Optional: Mount for persistent model cache
+      # Mount for persistent model cache (HuggingFace)
+      - huggingface-cache:/home/appuser/.cache/huggingface
+      # Mount for persistent model cache (Kokoro)
       - kokoro-cache:/home/appuser/.cache/kokoro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5032/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5032/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -40,6 +45,8 @@ services:
 
 volumes:
   kokoro-cache:
+    driver: local
+  huggingface-cache:
     driver: local
 
 networks:

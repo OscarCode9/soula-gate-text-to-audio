@@ -22,6 +22,7 @@ show_help() {
     echo "  status      Show service status"
     echo "  shell       Open shell in running container"
     echo "  clean       Remove containers and images"
+    echo "  clean-cache Clean only model cache volumes"
     echo "  test        Test the API endpoints"
     echo "  help        Show this help message"
     echo ""
@@ -78,6 +79,13 @@ clean_all() {
     echo "Cleanup complete"
 }
 
+clean_cache() {
+    echo "Cleaning model cache volumes..."
+    docker-compose down
+    docker volume rm soulgate-text-to-audio_kokoro-cache soulgate-text-to-audio_huggingface-cache 2>/dev/null || true
+    echo "Cache volumes cleaned"
+}
+
 test_api() {
     echo "Testing API endpoints..."
     echo ""
@@ -129,6 +137,9 @@ case "${1:-help}" in
         ;;
     clean)
         clean_all
+        ;;
+    clean-cache)
+        clean_cache
         ;;
     test)
         test_api
