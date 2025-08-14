@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soulgate Kokoro TTS - Test Stream</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .stop-btn {
+            background-color: #dc3545;
+        }
+        .stop-btn:hover {
+            background-color: #c82333;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .audio-controls {
+            margin-top: 20px;
+        }
+        .config {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .config h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .voice-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Soulgate Kokoro TTS - Stream en Tiempo Real</h1>
+        
+        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+            <h4 style="margin-top: 0; color: #1976d2;">📡 Streaming en Tiempo Real</h4>
+            <p style="margin-bottom: 0; color: #424242;">
+                Este sitio reproduce el audio <strong>conforme llega del servidor</strong>, sin esperar a que termine toda la síntesis. 
+                Haz clic en "Activar Audio" primero si es tu primera vez usando la página.
+            </p>
+        </div>
+        
+        <div class="config">
+            <h3>Configuración del Servidor</h3>
+            <div class="form-group">
+                <label for="serverUrl">URL del Servidor:</label>
+                <input type="text" id="serverUrl" value="http://13.58.240.149:5032" placeholder="http://servidor:puerto">
+            </div>
+        </div>
+
+        <form id="ttsForm">
+            <div class="form-group">
+                <label for="text">Texto a sintetizar:</label>
+                <textarea id="text" placeholder="Escribe aquí el texto que quieres convertir a audio..." required>Hola, este es un test del sistema de texto a voz con streaming. ¡Funciona muy bien!</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="lang">Idioma:</label>
+                <select id="lang">
+                    <option value="a">Inglés (a)</option>
+                    <option value="b">Alemán (b)</option>
+                    <option value="e" selected>Español (e)</option>
+                    <option value="f">Francés (f)</option>
+                    <option value="h">Hindi (h)</option>
+                    <option value="i">Italiano (i)</option>
+                    <option value="j">Japonés (j)</option>
+                    <option value="p">Portugués (p)</option>
+                    <option value="z">Chino (z)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="voice">Voz:</label>
+                <select id="voice">
+                    <option value="af_heart">af_heart</option>
+                    <option value="af_soul">af_soul</option>
+                    <option value="af_grace">af_grace</option>
+                    <option value="am_adam">am_adam</option>
+                    <option value="am_michael">am_michael</option>
+                    <option value="bf_emma">bf_emma</option>
+                    <option value="bf_isabella">bf_isabella</option>
+                    <option value="bm_george">bm_george</option>
+                    <option value="bm_lewis">bm_lewis</option>
+                </select>
+                <div class="voice-info">Más voces disponibles dependiendo del idioma seleccionado</div>
+            </div>
+
+            <div class="form-group">
+                <label for="speed">Velocidad:</label>
+                <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0">
+                <span id="speedValue">1.0x</span>
+            </div>
+
+            <button type="submit" id="streamBtn">🎵 Reproducir Stream en Tiempo Real</button>
+            <button type="button" id="stopBtn" class="stop-btn" disabled>⏹️ Detener</button>
+            <button type="button" id="enableAudioBtn" style="background-color: #28a745;">🔊 Activar Audio</button>
+        </form>
+
+        <div id="status" class="status"></div>
+
+        <div class="audio-controls">
+            <audio id="audioPlayer" controls style="width: 100%; margin-top: 10px;" preload="none"></audio>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('ttsForm');
+        const streamBtn = document.getElementById('streamBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const enableAudioBtn = document.getElementById('enableAudioBtn');
+        const status = document.getElementById('status');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const speedSlider = document.getElementById('speed');
+        const speedValue = document.getElementById('speedValue');
+        
+        let currentRequest = null;
+        let audioContext = null;
+        let nextPlayTime = 0;
+        let audioChunks = [];
+        let isPlaying = false;
+
+        // Update speed display
+        speedSlider.addEventListener('input', function() {
+            speedValue.textContent = this.value + 'x';
+        });
+
+        function showStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            status.style.display = 'none';
+        }
+
+        async function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                nextPlayTime = audioContext.currentTime;
+            }
+            
+            // Resume context if suspended (required for user interaction)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+        }
+
+        async function playAudioChunk(audioData) {
+            try {
+                await initAudioContext();
+                
+                // Decode the WAV data
+                const audioBuffer = await audioContext.decodeAudioData(audioData.buffer.slice());
+                
+                // Create audio source
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                
+                // Schedule playback
+                const startTime = Math.max(audioContext.currentTime, nextPlayTime);
+                source.start(startTime);
+                
+                // Update next play time
+                nextPlayTime = startTime + audioBuffer.duration;
+                
+                showStatus(`🎵 Reproduciendo audio en tiempo real... (fragmento ${audioChunks.length})`, 'success');
+                
+            } catch (error) {
+                console.error('Error playing audio chunk:', error);
+                showStatus(`Error reproduciendo audio: ${error.message}`, 'error');
+            }
+        }
+
+        async function streamTTS() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            const text = document.getElementById('text').value.trim();
+            const lang = document.getElementById('lang').value;
+            const voice = document.getElementById('voice').value;
+            const speed = parseFloat(document.getElementById('speed').value);
+
+            if (!serverUrl) {
+                showStatus('Por favor, introduce la URL del servidor', 'error');
+                return;
+            }
+
+            if (!text) {
+                showStatus('Por favor, introduce el texto a sintetizar', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Iniciando stream de audio...', 'info');
+                streamBtn.disabled = true;
+                stopBtn.disabled = false;
+                audioChunks = [];
+                isPlaying = true;
+                
+                // Initialize audio context for real-time playback
+                await initAudioContext();
+
+                const response = await fetch(`${serverUrl}/tts/stream`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        lang: lang,
+                        voice: voice,
+                        speed: speed
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                currentRequest = response;
+                
+                showStatus('Recibiendo audio...', 'info');
+
+                // Read the multipart stream
+                const reader = response.body.getReader();
+                let buffer = new Uint8Array();
+                let boundary = null;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) break;
+                    
+                    // Append new data to buffer
+                    const newBuffer = new Uint8Array(buffer.length + value.length);
+                    newBuffer.set(buffer);
+                    newBuffer.set(value, buffer.length);
+                    buffer = newBuffer;
+
+                    // Find boundary if not found yet
+                    if (!boundary) {
+                        const text = new TextDecoder().decode(buffer.slice(0, Math.min(100, buffer.length)));
+                        const match = text.match(/--([^\r\n]+)/);
+                        if (match) {
+                            boundary = `--${match[1]}`;
+                        }
+                    }
+
+                    if (boundary) {
+                        // Process complete parts
+                        buffer = await processMultipartBuffer(buffer, boundary);
+                    }
+                }
+
+                // Play concatenated audio
+                if (audioChunks.length > 0) {
+                    await playFinalAudio();
+                    showStatus(`✅ Stream completado. ${audioChunks.length} fragmentos de audio reproducidos.`, 'success');
+                } else {
+                    showStatus('No se recibieron fragmentos de audio', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                streamBtn.disabled = false;
+                stopBtn.disabled = true;
+                currentRequest = null;
+                isPlaying = false;
+            }
+        }
+
+        async function processMultipartBuffer(buffer, boundary) {
+            const boundaryBytes = new TextEncoder().encode(boundary);
+            let startIndex = 0;
+
+            while (true) {
+                // Find next boundary
+                let boundaryIndex = -1;
+                for (let i = startIndex; i <= buffer.length - boundaryBytes.length; i++) {
+                    let match = true;
+                    for (let j = 0; j < boundaryBytes.length; j++) {
+                        if (buffer[i + j] !== boundaryBytes[j]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        boundaryIndex = i;
+                        break;
+                    }
+                }
+
+                if (boundaryIndex === -1) {
+                    // No more complete parts
+                    return buffer.slice(startIndex);
+                }
+
+                // Find the next boundary
+                let nextBoundaryIndex = -1;
+                for (let i = boundaryIndex + boundaryBytes.length; i <= buffer.length - boundaryBytes.length; i++) {
+                    let match = true;
+                    for (let j = 0; j < boundaryBytes.length; j++) {
+                        if (buffer[i + j] !== boundaryBytes[j]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        nextBoundaryIndex = i;
+                        break;
+                    }
+                }
+
+                if (nextBoundaryIndex === -1) {
+                    // Incomplete part, return remaining buffer
+                    return buffer.slice(boundaryIndex);
+                }
+
+                // Extract the part between boundaries
+                const partData = buffer.slice(boundaryIndex + boundaryBytes.length, nextBoundaryIndex);
+                await processPart(partData);
+
+                startIndex = nextBoundaryIndex;
+            }
+        }
+
+        async function processPart(partData) {
+            const partText = new TextDecoder().decode(partData);
+            const headerEndIndex = partText.indexOf('\r\n\r\n');
+            
+            if (headerEndIndex === -1) return;
+
+            const headers = partText.substring(0, headerEndIndex);
+            const contentType = headers.match(/Content-Type:\s*([^\r\n]+)/i)?.[1]?.trim();
+
+            if (contentType === 'audio/wav') {
+                // Extract binary audio data
+                const headerBytes = new TextEncoder().encode(partText.substring(0, headerEndIndex + 4));
+                const audioData = partData.slice(headerBytes.length);
+                
+                if (audioData.length > 44) { // WAV header is 44 bytes minimum
+                    audioChunks.push(audioData);
+                    
+                    // Play audio chunk immediately in real-time
+                    if (isPlaying) {
+                        await playAudioChunk(audioData);
+                    }
+                }
+            } else if (contentType?.startsWith('text/plain')) {
+                const textContent = partText.substring(headerEndIndex + 4);
+                console.log('Mensaje del servidor:', textContent);
+            }
+        }
+
+        async function playFinalAudio() {
+            if (audioChunks.length === 0) return;
+
+            // Create a single blob from all chunks for the audio player
+            const blob = new Blob(audioChunks, { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            
+            audioPlayer.src = url;
+            audioPlayer.load();
+            
+            // Don't auto-play since we already played in real-time
+            console.log('Audio completo disponible en el reproductor');
+        }
+
+        function stopStream() {
+            if (currentRequest) {
+                currentRequest.body.cancel();
+                currentRequest = null;
+            }
+            
+            // Stop audio context
+            if (audioContext) {
+                audioContext.suspend();
+            }
+            
+            streamBtn.disabled = false;
+            stopBtn.disabled = true;
+            isPlaying = false;
+            showStatus('Stream detenido por el usuario', 'info');
+        }
+
+        // Event listeners
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            streamTTS();
+        });
+
+        stopBtn.addEventListener('click', stopStream);
+
+        enableAudioBtn.addEventListener('click', async function() {
+            try {
+                await initAudioContext();
+                enableAudioBtn.style.display = 'none';
+                showStatus('✅ Audio activado. Ya puedes usar el streaming en tiempo real.', 'success');
+            } catch (error) {
+                showStatus(`Error activando audio: ${error.message}`, 'error');
+            }
+        });
+
+        // Test server connection on page load
+        window.addEventListener('load', async function() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            try {
+                const response = await fetch(`${serverUrl}/`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showStatus(`✅ Conectado al servidor: ${data.service}`, 'success');
+                } else {
+                    showStatus('⚠️ Servidor no responde correctamente', 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ No se puede conectar al servidor: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
