@@ -1,6 +1,7 @@
 from typing import AsyncGenerator, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import io
 import soundfile as sf
@@ -10,6 +11,15 @@ import numpy as np
 from kokoro import KPipeline
 
 app = FastAPI(title="Soulgate Kokoro TTS", version="0.1.0")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Lazy singleton for the pipeline
 _pipeline: Optional[KPipeline] = None

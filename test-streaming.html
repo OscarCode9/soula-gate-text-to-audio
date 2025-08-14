@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soulgate TTS Streaming Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea, select, input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .status.loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .audio-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        audio {
+            width: 100%;
+            max-width: 500px;
+        }
+        .api-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .endpoint-selector {
+            margin-bottom: 20px;
+        }
+        .endpoint-selector input[type="radio"] {
+            margin-right: 8px;
+        }
+        .endpoint-selector label {
+            display: inline;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Soulgate TTS Streaming Test</h1>
+        
+        <div class="endpoint-selector">
+            <label><strong>Endpoint:</strong></label><br>
+            <label><input type="radio" name="endpoint" value="stream" checked> Stream (/tts/stream)</label>
+            <label><input type="radio" name="endpoint" value="regular"> Regular (/tts)</label>
+        </div>
+
+        <div class="form-group">
+            <label for="apiUrl">URL del API:</label>
+            <input type="text" id="apiUrl" value="http://13.58.240.149:5032" placeholder="http://localhost:8010">
+        </div>
+
+        <div class="form-group">
+            <label for="text">Texto a sintetizar:</label>
+            <textarea id="text" placeholder="Escribe aquí el texto que quieres convertir a audio...">Hola mundo. Este es un test de streaming. Cada oración se envía por separado.</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="lang">Idioma:</label>
+            <select id="lang">
+                <option value="a" selected>a (default)</option>
+                <option value="b">b</option>
+                <option value="e">e</option>
+                <option value="f">f</option>
+                <option value="h">h</option>
+                <option value="i">i</option>
+                <option value="j">j</option>
+                <option value="p">p</option>
+                <option value="z">z</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="voice">Voz:</label>
+            <input type="text" id="voice" value="af_heart" placeholder="af_heart">
+        </div>
+
+        <div class="form-group">
+            <label for="speed">Velocidad:</label>
+            <input type="number" id="speed" value="1.0" min="0.5" max="2.0" step="0.1">
+        </div>
+
+        <div class="controls">
+            <button onclick="synthesize()">🎤 Generar Audio</button>
+            <button onclick="clearAll()">🗑️ Limpiar</button>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+
+        <div class="audio-container">
+            <audio id="audioPlayer" controls style="display: none;"></audio>
+        </div>
+
+        <div class="api-info">
+            <strong>Información del API:</strong><br>
+            <span id="curlCommand">curl -X POST "http://13.58.240.149:5032/tts/stream" -H "Content-Type: application/json" -d '{"text":"...","lang":"a","voice":"af_heart","speed":1.0}' --output stream_output.wav</span>
+        </div>
+    </div>
+
+    <script>
+        let audioChunks = [];
+        let mediaRecorder = null;
+
+        function updateCurlCommand() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const endpoint = document.querySelector('input[name="endpoint"]:checked').value;
+            const text = document.getElementById('text').value;
+            const lang = document.getElementById('lang').value;
+            const voice = document.getElementById('voice').value;
+            const speed = parseFloat(document.getElementById('speed').value);
+
+            const endpointPath = endpoint === 'stream' ? '/tts/stream' : '/tts';
+            const curlCommand = `curl -X POST "${apiUrl}${endpointPath}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "text": "${text.replace(/"/g, '\\"')}",
+    "lang": "${lang}",
+    "voice": "${voice}",
+    "speed": ${speed}
+  }' \\
+  --output ${endpoint === 'stream' ? 'stream_output.wav' : 'output.wav'}`;
+
+            document.getElementById('curlCommand').textContent = curlCommand;
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        async function synthesize() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const endpoint = document.querySelector('input[name="endpoint"]:checked').value;
+            const text = document.getElementById('text').value;
+            const lang = document.getElementById('lang').value;
+            const voice = document.getElementById('voice').value;
+            const speed = parseFloat(document.getElementById('speed').value);
+
+            if (!text.trim()) {
+                showStatus('Por favor, ingresa algún texto', 'error');
+                return;
+            }
+
+            const endpointPath = endpoint === 'stream' ? '/tts/stream' : '/tts';
+            const url = `${apiUrl}${endpointPath}`;
+
+            showStatus('Generando audio...', 'loading');
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        lang: lang,
+                        voice: voice,
+                        speed: speed
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                if (endpoint === 'stream') {
+                    await handleStreamResponse(response);
+                } else {
+                    await handleRegularResponse(response);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleRegularResponse(response) {
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = audioUrl;
+            audioPlayer.style.display = 'block';
+            
+            showStatus('Audio generado correctamente', 'success');
+            
+            // Auto-play
+            audioPlayer.play().catch(e => {
+                console.log('Auto-play bloqueado por el navegador');
+            });
+        }
+
+        async function handleStreamResponse(response) {
+            const reader = response.body.getReader();
+            const chunks = [];
+            
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                }
+                
+                // Combine all chunks
+                const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+                const combinedArray = new Uint8Array(totalLength);
+                let offset = 0;
+                
+                for (const chunk of chunks) {
+                    combinedArray.set(chunk, offset);
+                    offset += chunk.length;
+                }
+                
+                // Create blob and audio URL
+                const audioBlob = new Blob([combinedArray], { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.display = 'block';
+                
+                showStatus('Audio streaming completado', 'success');
+                
+                // Auto-play
+                audioPlayer.play().catch(e => {
+                    console.log('Auto-play bloqueado por el navegador');
+                });
+                
+            } catch (error) {
+                throw new Error(`Error procesando stream: ${error.message}`);
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('text').value = '';
+            document.getElementById('audioPlayer').style.display = 'none';
+            hideStatus();
+        }
+
+        // Update curl command when form changes
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurlCommand();
+            
+            // Add event listeners for form changes
+            ['apiUrl', 'text', 'lang', 'voice', 'speed'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateCurlCommand);
+            });
+            
+            document.querySelectorAll('input[name="endpoint"]').forEach(radio => {
+                radio.addEventListener('change', updateCurlCommand);
+            });
+        });
+    </script>
+</body>
+</html>
