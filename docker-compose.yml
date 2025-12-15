@@ -19,6 +19,12 @@ services:
       - huggingface-cache:/home/appuser/.cache/huggingface
       # Mount for persistent model cache (Kokoro)
       - kokoro-cache:/home/appuser/.cache/kokoro
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G  # Límite de memoria para optimizar consumo de RAM
+        reservations:
+          memory: 512M  # Memoria mínima reservada
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5032/"]

@@ -38,14 +38,14 @@ _cache_lock = threading.Lock()
 # Cache de audio para evitar regenerar contenido idéntico
 _audio_cache: Dict[str, Tuple[np.ndarray, float]] = {}  # hash -> (audio, timestamp)
 _audio_cache_lock = threading.Lock()
-_max_cache_size = 100  # Máximo número de audios en cache
+_max_cache_size = 40  # Optimizado para reducir consumo de RAM
 _cache_ttl = 3600  # TTL de 1 hora para cache de audio
 
 # Thread pool con más workers basado en CPU cores disponibles
 cpu_count = os.cpu_count() or 4
-optimal_workers = min(max(cpu_count, 4), 12)  # Entre 4 y 12 workers
+optimal_workers = min(max(cpu_count, 4), 6)  # Optimizado para reducir consumo de RAM (4-6 workers)
 audio_executor = ThreadPoolExecutor(max_workers=optimal_workers)
-io_executor = ThreadPoolExecutor(max_workers=4)  # Executor separado para I/O
+io_executor = ThreadPoolExecutor(max_workers=2)  # Executor separado para I/O (reducido a 2)
 
 # Estadísticas de uso
 _stats = defaultdict(int)
@@ -97,8 +97,8 @@ def get_pipeline(lang_code: str = "a") -> KPipeline:
             _pipeline_cache[lang_code] = KPipeline(lang_code=lang_code)
             
             # Limpiar cache si hay demasiados pipelines (gestión de memoria)
-            if len(_pipeline_cache) > 5:  # Aumentado de 3 a 5
-                # Mantener solo los 5 más recientes
+            if len(_pipeline_cache) > 2:  # Optimizado para reducir consumo de RAM
+                # Mantener solo los 2 más recientes
                 oldest_lang = next(iter(_pipeline_cache))
                 print(f"Eliminando pipeline más antiguo: {oldest_lang}")
                 del _pipeline_cache[oldest_lang]
@@ -111,22 +111,25 @@ def get_pipeline(lang_code: str = "a") -> KPipeline:
         return _pipeline_cache[lang_code]
 
 
-# Pre-calentar pipelines más comunes al inicio
+# Pre-calentar pipelines más comunes al inicio - DESHABILITADO para reducir consumo de RAM
 async def warmup_pipelines():
-    """Pre-calentar pipelines comunes para reducir latencia inicial"""
-    common_langs = ["a", "e"]  # Inglés y otros comunes
-    for lang in common_langs:
-        try:
-            print(f"Pre-calentando pipeline {lang}...")
-            pipeline = get_pipeline(lang)
-            # Generar audio pequeño para inicializar completamente
-            list(pipeline("Hi", voice="af_heart", speed=1.0))
-            print(f"✓ Pipeline {lang} pre-calentado")
-        except Exception as e:
-            print(f"Error pre-calentando pipeline {lang}: {e}")
+    """Pre-calentar pipelines comunes para reducir latencia inicial - DESHABILITADO"""
+    # Deshabilitado para optimización de memoria - los pipelines se cargarán bajo demanda
+    print("Pre-calentamiento de pipelines deshabilitado (optimización de RAM)")
+    return
+    # common_langs = ["a", "e"]  # Inglés y otros comunes
+    # for lang in common_langs:
+    #     try:
+    #         print(f"Pre-calentando pipeline {lang}...")
+    #         pipeline = get_pipeline(lang)
+    #         # Generar audio pequeño para inicializar completamente
+    #         list(pipeline("Hi", voice="af_heart", speed=1.0))
+    #         print(f"✓ Pipeline {lang} pre-calentado")
+    #     except Exception as e:
+    #         print(f"Error pre-calentando pipeline {lang}: {e}")
 
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=16)  # Optimizado para reducir consumo de RAM
 def get_optimized_chunks(text: str, max_words: int) -> Tuple[str, ...]:
     """Versión optimizada y cacheada de división de texto"""
     return tuple(smart_text_split(text, max_words))
