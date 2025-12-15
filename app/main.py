@@ -75,6 +75,7 @@ LANG_MAPPING = {
     "a": "en-US",  # American English
     "b": "en-GB",  # British English  
     "e": "es-MX",  # Spanish (Mexico)
+    "es_spain": "es-ES",  # Spanish (Spain)
     "f": "fr-FR",  # French
     "h": "hi-IN",  # Hindi
     "i": "it-IT",  # Italian
@@ -114,8 +115,12 @@ def get_memory_usage_mb() -> float:
 
 
 def get_edge_voice(kokoro_voice: str, lang_code: str) -> str:
-    """Convertir voz Kokoro a voz Edge TTS"""
-    # Primero intentar mapeo directo
+    """Convertir voz Kokoro a voz Edge TTS o usar directamente si es voz Edge TTS"""
+    # Si ya es una voz Edge TTS válida (contiene 'Neural'), usarla directamente
+    if 'Neural' in kokoro_voice:
+        return kokoro_voice
+    
+    # Primero intentar mapeo directo de voces Kokoro legacy
     if kokoro_voice in VOICE_MAPPING:
         return VOICE_MAPPING[kokoro_voice]
     
